@@ -1,3 +1,3 @@
 import db
 
-db.command('SELECT * FROM login')
+print(db.idExists(1))

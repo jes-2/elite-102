@@ -14,3 +14,13 @@ cnx = mysql.connector.connect(
 
 csr = cnx.cursor()
 
+def getUsers():
+    csr.execute("SELECT * FROM login")
+    return csr.fetchall()
+
+def idExists(id):
+    users = getUsers()
+    for user in users:
+        if user[0] == id:
+            return True
+    return False
