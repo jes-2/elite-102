@@ -1,13 +1,16 @@
-import sqlalchemy as sql
+import mysql.connector
 
-engine = sql.create_engine("postgresql://root:gufhew07@localhost:3306")
-con = engine.connect()
+current_user = {'usr':'root','psw':'gufhew07'}
+current_database = 'users'
 
-def exe(command):
-    if not type(command) == 'str':
-        print(__file__+": command is not a string")
-    else:
-        with engine.connect() as connection:
-            connection.execute(sql.text(command))
-            connection.commit()
-            print(__file__+": executed")
+data_buffer = None
+
+cnx = mysql.connector.connect(
+    host="localhost",
+    user=current_user['usr'],
+    password=current_user['psw'],
+    database=current_database
+)
+
+csr = cnx.cursor()
+
