@@ -4,6 +4,7 @@ current_user = {'usr':'root','psw':'gufhew07'}
 current_database = 'users'
 
 data_buffer = None
+user_info = {}
 
 cnx = mysql.connector.connect(
     host="localhost",
@@ -14,13 +15,40 @@ cnx = mysql.connector.connect(
 
 csr = cnx.cursor()
 
+
+def add_Balance(id,amount):
+    csr.execute(f"UPDATE indentifying SET balance = balance + {amount} WHERE id = '{id}'")
+    cnx.commit()
+
+def remove_balance(id,amount):
+    csr.execute(f"UPDATE indentifying SET balance = balance - {amount} WHERE id = '{id}'")
+    cnx.commit()
+
+def drop_account(id):
+    csr.execute(f"DELETE FROM login WHERE id = '{id}'")
+    csr.execute(f"DELETE FROM indentifying WHERE id = '{id}'")
+    cnx.commit()
+
+def create_account(id,psw,name,dob,ssn):
+    csr.execute(f"INSERT INTO login VALUES ('{id}','{psw}')")
+    csr.execute(f"INSERT INTO indentifying VALUES ('{id}','{name}','{dob}','{ssn}',0)")
+    cnx.commit()
+
+# update our scripts usertable from the usertable in the database
+# read function
 def getUsers():
     csr.execute("SELECT * FROM login")
-    return csr.fetchall()
 
-def idExists(id):
-    users = getUsers()
-    for user in users:
-        if user[0] == id:
-            return True
-    return False
+    for i in csr.fetchall():
+        user_info[i[0]] = {'psw':i[1],'name':None,'dob':None,'ssn':None}
+    
+    csr.execute("SELECT * FROM indentifying")
+
+    for i in csr.fetchall():
+        user_info[i[0]]['dob'] = i[2]
+        user_info[i[0]]['ssn'] = i[3]
+        user_info[i[0]]['name'] = i[1]
+        user_info[i[0]]['balance'] = i[4]
+    
+    csr.close()
+

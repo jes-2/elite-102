@@ -1,3 +1,4 @@
 import db
 
-print(db.idExists(1))
+db.getUsers()
+print(db.user_info)
