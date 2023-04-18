@@ -52,3 +52,9 @@ def getUsers():
     
     csr.close()
 
+def idExists(id):
+    getUsers()
+    if id in user_info:
+        return True
+    else:
+        return False
