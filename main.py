@@ -1,4 +1,3 @@
 import db
+import cli
 
-db.getUsers()
-print(db.user_info)

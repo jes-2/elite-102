@@ -15,6 +15,16 @@ cnx = mysql.connector.connect(
 
 csr = cnx.cursor()
 
+def connect():
+    global cnx,csr
+    cnx = mysql.connector.connect(
+        host="localhost",
+        user=current_user['usr'],
+        password=current_user['psw'],
+        database=current_database
+    )
+    csr = cnx.cursor()
+
 
 def add_Balance(id,amount):
     csr.execute(f"UPDATE indentifying SET balance = balance + {amount} WHERE id = '{id}'")
@@ -34,9 +44,13 @@ def create_account(id,psw,name,dob,ssn):
     csr.execute(f"INSERT INTO indentifying VALUES ('{id}','{name}','{dob}','{ssn}',0)")
     cnx.commit()
 
+def getBalance(id):
+    csr.execute(f"SELECT balance FROM indentifying WHERE id = '{id}'")
+    return csr.fetchone()[0]
+
 # update our scripts usertable from the usertable in the database
-# read function
 def getUsers():
+    connect()
     csr.execute("SELECT * FROM login")
 
     for i in csr.fetchall():
@@ -58,3 +72,13 @@ def idExists(id):
         return True
     else:
         return False
+    
+def login(id,psw):
+    getUsers()
+    if idExists(id):
+        if user_info[id]['psw'] == psw:
+            return [True,'Success']
+        else:
+            return [False,'Incorrect Passkey']
+    else:
+        return [False,'ID does not exist']
