@@ -1,14 +1,3 @@
-import mysql.connector
+dob = '12/12/2012'
 
-cnx = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  password="gufhew07",
-  database="users"
-)
-
-cursor = cnx.cursor()
-
-cursor.execute('SELECT * FROM login')
-
-print(cursor.fetchall())
+print(dob[0:2])
