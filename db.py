@@ -30,11 +30,11 @@ def drop_account(id):
     csr.execute(f"DELETE FROM indentifying WHERE id = '{id}'")
     cnx.commit()
 
-def create_account(id,psw,name,dob,ssn):
+def create_account(id,psw,level,name,dob,ssn):
     connect()
     f_dob = dob.split('/')
     
-    csr.execute(f"INSERT INTO login(id, psw) VALUES ('{id}','{psw}')")
+    csr.execute(f"INSERT INTO login(id, psw, admin) VALUES ('{id}','{psw}','{level}')")
     csr.execute(f"INSERT INTO indentifying(id, name, dob, ssn, balance) VALUES ('{id}','{name}','{f_dob[2]}-{f_dob[0]}-{f_dob[1]}','{ssn}',0)")
     cnx.commit()
 
@@ -46,8 +46,7 @@ def push_userinfo(id=None):
             csr.execute(f"UPDATE indentifying SET name = '{user_info[i]['name']}', dob = '{user_info[i]['dob']}', ssn = '{user_info[i]['ssn']}' WHERE id = '{i}'")
             cnx.commit()
     else:
-        print(locals())
-        csr.execute(f"UPDATE indentifying SET name = '{user_info[id]['name']}', dob = '{user_info[id]['dob']}', ssn = '{user_info[id]['ssn']}' WHERE id = '{id}'")
+        csr.execute(f"UPDATE indentifying SET name = '{user_info[id]['name']}', dob = '{user_info[id]['dob']}', ssn = '{user_info[id]['ssn']}', balance = '{user_info[id]['balance']}' WHERE id = '{id}'")
 
 def update_login(id,psw):
     connect()
@@ -61,7 +60,7 @@ def getUsers():
     csr.execute("SELECT * FROM login")
 
     for i in csr.fetchall():
-        user_info[i[0]] = {'psw':i[1],'name':None,'dob':None,'ssn':None}
+        user_info[i[0]] = {'psw':i[1],'name':None,'dob':None,'ssn':None,'balance':None,'admin':i[2]}
     
     csr.execute("SELECT * FROM indentifying")
 
@@ -84,7 +83,7 @@ def login(id,psw):
     getUsers()
     if idExists(id):
         if user_info[id]['psw'] == psw:
-            return [True,'Success']
+            return [True,'Success',user_info[id]['admin']]
         else:
             return [False,'Incorrect Passkey']
     else:
