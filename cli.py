@@ -1,6 +1,5 @@
 import db
 import random
-import decimal
 
 def isInt(x):
     try:
@@ -19,19 +18,26 @@ def deposit():
     print("How much would you like to deposit?")
     while True:
         x = input(' > ')
+        
+            
+def withdraw():
+    print(f"Withdraw\n{'-'*20}")
+    print("How much would you like to withdraw?")
+    while True:
+        x = input(' > ')
         try:
-            x = decimal.Decimal(x)
+            x = Decimal(x)
         except:
             print('Invalid amount')
         else:
-            x = decimal.Decimal(x)
-            if x <= 0:
-                print('Cannot be 0')
+            x = Decimal(x)
+            if x < 0:
+                print('Invalid Amount')
             else:
-                db.user_info[session.session_login['id']]['balance'] += x
+                db.user_info[session.session_login['id']]['balance'] -= round(x,2)
                 db.push_userinfo(session.session_login['id'])
                 db.getUsers()
-                print(f"\nDeposited ${x} into account {session.session_login['id']}")
+                print(f"\Withdrew ${x} into account {session.session_login['id']}")
                 print(f"Balance: ${db.user_info[session.session_login['id']]['balance']}\n")
                 return
 
@@ -59,10 +65,29 @@ def create_user():
     d = input(" > ")
     print("\nSSN")
     s = input(" > ")
+    if not s.isdigit() or len(s) != 9:
+        print('Invalid SSN')
+        return
     db.create_account(inf[0],inf[1],inf[2],n,d,s)
 
-        
-
+def delete_user():
+    db.getUsers()
+    print(f"\nDelete User\n{'-'*20}")
+    for i in db.user_info:
+        print(f"ID: {i} - {db.user_info[i]['name']}")
+    print("\nFormat - id\n")
+    id = input(" > ")
+    if id == None:
+        return
+    elif not isInt(id):
+        print('ID must be an integer')
+        return
+    
+    id = int(id)
+    if not db.idExists(id):
+        print('ID does not exist')
+        return
+    db.drop_account(id)
 
 def dev():
     while True:
@@ -83,6 +108,7 @@ def dev():
                 else:
                     session.dev_options[ch]['function']()
 
+
 class session:
     dev_options = {
         0: {
@@ -93,7 +119,7 @@ class session:
         1: {
             'option_name':'Delete User',
             'description':'Delete user from database',
-            'function':None
+            'function': delete_user
         },
         2: {
             'option_name':'Create User',
@@ -239,37 +265,37 @@ class session:
         print(f"Help\n\nForgot Password\n{'-'*20}")
         
         while True:
-            print('Enter ID:')
+            print(' - Enter ID')
             id = input(' > ')
             if id.isdigit() and int(id) in db.user_info:
                 id = int(id)
-                print('Enter SSN:')
+                print(' - Enter SSN')
                 ssn = input(' > ')
                 if db.user_info[id]['ssn'] == ssn:
-                    print('Great!')
+                    print(' - Great!')
                     p1=None
                     while True:
-                        print('Enter new password:')
+                        print(' - Enter new password')
                         p1 = input(' > ')
                         if not len(p1) >= 6:
-                            print('Password must be longer than 6 characters')
+                            print(' ! Password must be longer than 6 characters')
                         else:
                             break
-                    print('Confirm new password:')
+                    print('   Confirm new password:')
                     p2 = input(' > ')
                     if p1 == p2:
-                        print('\nPassword changed successfully!')
+                        print('\n - Password changed successfully!')
                         db.update_login(id,p1)
                         session.menu()
                         break
                     else:
-                        print('Passwords do not match')
+                        print(' ! Passwords do not match')
                         continue
                 else:
-                    print('Invalid SSN (XXX-XX-XXXX)')
+                    print(' ! Invalid SSN (XXX-XX-XXXX)')
             else:
-                print('\nInvalid ID')
-            print('Try again?')
+                print('\n - Invalid ID')
+            print(' - Try again?')
             ch = input(' > ')
             if ch == 'n' or ch == 'no':
                 break
@@ -292,7 +318,7 @@ class session:
             if ch.isdigit() and int(ch) in session.options.keys():
                 ch = int(ch)
                 if session.options[ch]['function'] == None:
-                    print('Function not implemented')
+                    print(' ! Function not implemented')
                 else:
                     session.options[ch]['function']()
             else:

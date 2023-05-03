@@ -1,4 +1,5 @@
 import mysql.connector
+from decimal import Decimal
 
 current_user = {'usr':'root','psw':'gufhew07'}
 current_database = 'users'
@@ -26,9 +27,11 @@ def connect():
     csr = cnx.cursor()
 
 def drop_account(id):
+    connect()
     csr.execute(f"DELETE FROM login WHERE id = '{id}'")
     csr.execute(f"DELETE FROM indentifying WHERE id = '{id}'")
     cnx.commit()
+    getUsers()
 
 def create_account(id,psw,level,name,dob,ssn):
     connect()
@@ -46,7 +49,7 @@ def push_userinfo(id=None):
             csr.execute(f"UPDATE indentifying SET name = '{user_info[i]['name']}', dob = '{user_info[i]['dob']}', ssn = '{user_info[i]['ssn']}' WHERE id = '{i}'")
             cnx.commit()
     else:
-        csr.execute(f"UPDATE indentifying SET name = '{user_info[id]['name']}', dob = '{user_info[id]['dob']}', ssn = '{user_info[id]['ssn']}', balance = '{user_info[id]['balance']}' WHERE id = '{id}'")
+        csr.execute(f"UPDATE indentifying SET name = '{user_info[id]['name']}', dob = '{user_info[id]['dob']}', ssn = '{user_info[id]['ssn']}', balance = '{float(user_info[id]['balance'])}' WHERE id = '{id}'")
 
 def update_login(id,psw):
     connect()
@@ -68,7 +71,7 @@ def getUsers():
         user_info[i[0]]['dob'] = i[2]
         user_info[i[0]]['ssn'] = i[3]
         user_info[i[0]]['name'] = i[1]
-        user_info[i[0]]['balance'] = i[4]
+        user_info[i[0]]['balance'] = float(i[4])
     
     csr.close()
 
