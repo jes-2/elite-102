@@ -1,5 +1,14 @@
 import db
 import random
+import decimal
+
+def toDec(x):
+    try:
+        d=decimal.Decimal(str(x))
+        return d
+    except:
+        return None
+    
 
 def isInt(x):
     try:
@@ -8,39 +17,45 @@ def isInt(x):
     except:
         return False
     
-def getBalance():
-    db.getUsers()
-    return db.user_info[session.session_login[session.session_login['id']]]['balance']
-    
 def deposit():
     db.getUsers()
     print(f"Deposit\n{'-'*20}")
+    print('\nPlease enter pin')
+    p = input(' > ')
+    if p != db.user_info[session.session_login['id']]['pin']:
+        print('Incorrect pin')
+        return
     print("How much would you like to deposit?")
     while True:
         x = input(' > ')
+        if x == None or not '.' in x:
+            print('Invalid input')
+        else:
+            db.modifyBal(session.session_login['id'],x,'+')
+            db.getUsers()
+            print(f"New Balance: {db.user_info[session.session_login['id']]['balance']}")
+            break
         
             
 def withdraw():
+    db.getUsers()
     print(f"Withdraw\n{'-'*20}")
+    print('\nPlease enter pin')
+    p = input(' > ')
+    if p != db.user_info[session.session_login['id']]['pin']:
+        print('Incorrect pin')
+        return
     print("How much would you like to withdraw?")
     while True:
         x = input(' > ')
-        try:
-            x = Decimal(x)
-        except:
-            print('Invalid amount')
+        if x == None or not '.' in x:
+            print('Invalid input')
         else:
-            x = Decimal(x)
-            if x < 0:
-                print('Invalid Amount')
-            else:
-                db.user_info[session.session_login['id']]['balance'] -= round(x,2)
-                db.push_userinfo(session.session_login['id'])
-                db.getUsers()
-                print(f"\Withdrew ${x} into account {session.session_login['id']}")
-                print(f"Balance: ${db.user_info[session.session_login['id']]['balance']}\n")
-                return
-
+            db.modifyBal(session.session_login['id'],x,'-')
+            db.getUsers()
+            print(f"New Balance: {db.user_info[session.session_login['id']]['balance']}")
+            break
+            
 def create_user():
     print(f"\nCreate User\n{'-'*20}")
     print("\nFormat - id:pk(>6):level(0-1)\n")
@@ -65,10 +80,15 @@ def create_user():
     d = input(" > ")
     print("\nSSN")
     s = input(" > ")
+    print("\nPIN")
+    p = input(" > ")
     if not s.isdigit() or len(s) != 9:
         print('Invalid SSN')
         return
-    db.create_account(inf[0],inf[1],inf[2],n,d,s)
+    elif not p.isdigit() or not len(p) != 4:
+        print('Invalid PIN')
+        return
+    db.create_account(inf[0],inf[1],inf[2],n,d,s,p)
 
 def delete_user():
     db.getUsers()
@@ -92,7 +112,7 @@ def delete_user():
 def dev():
     while True:
         if not session.session_login['admin'] == 1 or session.session_login == None:
-            print('ERR: ACCESS_DENIED')
+            print(' ! ACCESS_DENIED')
             break
         print(f"{'-'*20}\nDeveloper Options\n{'-'*20}")
         for i,v in session.dev_options.items():
@@ -104,10 +124,90 @@ def dev():
                 break
             else:
                 if session.dev_options[ch]['function'] == None:
-                    print('Function not implemented')
+                    print(' ! Function not implemented')
                 else:
                     session.dev_options[ch]['function']()
 
+def forgot_PIN():
+    print(f"\nForgot PIN\n{'-'*20}")
+    print('\n - Please enter your SSN')
+    attempts = 0
+    while True:
+        s = input(' > ')
+        if not s.isdigit() and len(s) != 9:
+            print(' ! Invalid SSN')
+        else:
+            db.getUsers()
+            if db.user_info[session.session_login['id']]['ssn'] != s:
+                print(' ! Incorrect SSN')
+                continue
+            else:
+                print(' - Please enter new PIN')
+                while True:
+                    p = input(' > ')
+                    if not p.isdigit() or len(p) != 4:
+                        print('! Invalid PIN')
+                    else:
+                        db.user_info[session.session_login['id']]['pin'] = p
+                        db.push_userinfo()
+                        db.getUsers()
+                        print(' - PIN changed\n')
+                        break
+                break
+
+def change_PIN():
+    attempts = 0
+    threshold = 3
+    print(f"\nChange PIN\n{'-'*20}")
+    print('\n - Please enter current PIN')
+    while True:
+        if attempts > threshold:
+            print(" - Forgot PIN?")
+            ch = input(' > ')
+            if ch == 'y' or ch == 'yes':
+                forgot_PIN()
+                break
+            else:
+                threshold += 3
+                continue
+        p = input(' > ')
+        if p != db.user_info[session.session_login['id']]['pin']:
+            print(' ! Incorrect pin')
+            attempts += 1
+        else:
+            print(' - Please enter new PIN')
+            while True:
+                p = input(' > ')
+                if not p.isdigit() or len(p) != 4:
+                    print('! Invalid PIN')
+                else:
+                    db.user_info[session.session_login['id']]['pin'] = p
+                    db.push_userinfo()
+                    db.getUsers()
+                    print(' - PIN changed\n')
+                    break
+            break
+    print('')
+
+def mng_account():
+    db.getUsers()
+    print(f"{'-'*20}\nAccount Options\n{'-'*20}")
+    print(f"    ID {session.session_login['id']}\nName {db.user_info[session.session_login['id']]['name']}\nBalance ${db.user_info[session.session_login['id']]['balance']}\n")
+    while True:
+        print('')
+        for i,v in session.account_options.items():
+            print(f"{i}: {v['option_name']} - {v['description']}")
+        ch = input(' > ')
+        if isInt(ch) and int(ch) in session.account_options.keys():
+            if ch == '-1':
+                break
+            else:
+                ch = int(ch)
+                if session.account_options[ch]['function'] == None:
+                    print(' ! Function not implemented')
+                else:
+                    session.account_options[ch]['function']()
+                    print("")
 
 class session:
     dev_options = {
@@ -139,6 +239,19 @@ class session:
         }
     }
 
+    account_options = {
+        0: {
+            'option_name':'Change PIN',
+            'description':'Change your PIN',
+            'function':change_PIN
+        },
+        -1: {
+            'option_name':'Exit',
+            'description':'Exit account options',
+            'function':None
+        }
+    }
+
     options = {
         0: {
             'option_name':'Logout',
@@ -153,12 +266,12 @@ class session:
         2: {
             'option_name':'Withdraw',
             'description':'Withdraw money from your account',
-            'function':None
+            'function': withdraw
         },
         3: {
             'option_name':'Account',
             'description':'Manage your account',
-            'function':None
+            'function': mng_account
         }
     }
     user_info = None
@@ -183,8 +296,8 @@ class session:
     
     def login():
         while True:
-            id = int(input("ID: "))
-            pk = input("PK: ")
+            id = int(input(" - ID "))
+            pk = input(" - PK ")
 
             success = db.login(id,pk)
 
@@ -199,7 +312,7 @@ class session:
             else:
                 print(success[1])
                 session.session_login = None
-                print('Would you like to go back?')
+                print(' - Would you like to go back?')
                 ch = input(" > ")
                 if (ch=="y" or ch=="yes"):
                     session.menu()
@@ -211,52 +324,66 @@ class session:
         n=None
         d=None
         s=None
+        pk=None
         p=None
 
         # Get Name
-        print('Legal Name:')
+        print(' - Legal Name:')
         n = input(' > ')
 
         # Get DOB
         while True:
-            print('Date of Birth (XX/XX/XXXX):')
+            print(' - Date of Birth (XX/XX/XXXX):')
             d = input(' > ')
             if len(d) == 10 and d[2] == '/' and d[5] == '/':
                 break
             else:
-                print('\nInvalid date format\n')
+                print('\n ! Invalid date format\n')
 
         # Get SSN
         while True:
-            print('Social Security Number (XXX-XX-XXXX):')
+            print(' - Social Security Number (XXX-XX-XXXX):')
             s = input(' > ')
             if len(s) == 11 and s[3] == '-' and s[6] == '-':
                 break
             else:
-                print('\nInvalid SSN format\n')
+                print('\n ! Invalid SSN format\n')
 
         # Get Password
         while True:
-            print('Password (>6 chars) :')
-            p = input(' > ')
-            if not len(p) > 6:
-                print('\nPassword must be longer than 6 characters\n')
+            print(' - Password (>6 chars) :')
+            pk = input(' > ')
+            if not len(pk) > 6:
+                print('\n ! Password must be longer than 6 characters\n')
             else:
-                print('Confirm Password:')
+                print(' - Confirm Password:')
+                cp = input(' > ')
+                if pk == cp:
+                    break
+                else:
+                    print('\n ! Passwords do not match\n')
+
+        #Get PIN
+        while True:
+            print(' - PIN (4 chars):')
+            p = input(' > ')
+            if not len(p) == 4:
+                print('\n ! PIN must be 4 characters\n')
+            else:
+                print(' - Confirm PIN:')
                 cp = input(' > ')
                 if p == cp:
                     break
                 else:
-                    print('\nPasswords do not match\n')
+                    print('\n ! PINs do not match\n')
         
         # Create Account procedure
         db.getUsers()
         while True:
             randId = random.randint(100000000,999999999)
             if not randId in db.user_info:
-                db.create_account(randId,p,n,d,s)
+                db.create_account(randId,pk,n,d,s,p)
                 break
-        
         print(f"Account created with ID {randId}, please login.")
         session.menu()
 
@@ -314,9 +441,12 @@ class session:
             for i,v in session.options.items():
                 print(f"{i}. {v['option_name']}")
             ch=input(' > ')
-
             if ch.isdigit() and int(ch) in session.options.keys():
                 ch = int(ch)
+                if ch == 0:
+                    session.session_login = None
+                    print(' - Logged out')
+                    break
                 if session.options[ch]['function'] == None:
                     print(' ! Function not implemented')
                 else:
